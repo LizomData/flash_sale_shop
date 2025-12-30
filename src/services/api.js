@@ -13,11 +13,34 @@ export function getAuthToken() {
   return authToken
 }
 
+function parseJwt(token) {
+  try {
+    const payload = token.split('.')[1]
+    if (!payload) return null
+    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+    return JSON.parse(decoded)
+  } catch (error) {
+    return null
+  }
+}
+
+function isTokenExpired(token) {
+  const payload = parseJwt(token)
+  if (!payload?.exp) return false
+  return payload.exp * 1000 < Date.now()
+}
+
 function authHeaders() {
   return authToken ? { Authorization: `Bearer ${authToken}` } : {}
 }
 
 async function request(path, options = {}) {
+  if (authToken && isTokenExpired(authToken)) {
+    setAuthToken('')
+    const err = new Error('登录已过期，请重新登录')
+    err.status = 401
+    throw err
+  }
   const response = await fetch(path, {
     headers: {
       'Content-Type': 'application/json',
