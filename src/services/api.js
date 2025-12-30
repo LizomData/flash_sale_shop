@@ -1,3 +1,4 @@
+const API_BASE_URL = 'http://localhost:8080'
 let authToken = localStorage.getItem('auth_token') || ''
 
 export function setAuthToken(token) {
@@ -41,7 +42,8 @@ async function request(path, options = {}) {
     err.status = 401
     throw err
   }
-  const response = await fetch(path, {
+  const url = path.startsWith('http') ? path : `${API_BASE_URL}${path}`
+  const response = await fetch(url, {
     headers: {
       'Content-Type': 'application/json',
       ...authHeaders(),
